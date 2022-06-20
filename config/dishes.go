@@ -78,7 +78,7 @@ var Dishes = []models.Dish{
 }
 
 func GetDish(id int) models.Dish {
-	return Dishes[id]
+	return Dishes[id - 1]
 }
 
 func GetDishLen() int {
