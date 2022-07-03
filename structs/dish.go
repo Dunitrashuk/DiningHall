@@ -1,4 +1,4 @@
-package models
+package structs
 
 type Dish struct {
 	Dish_id int    `json:"dish_id"`

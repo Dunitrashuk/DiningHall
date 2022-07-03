@@ -20,7 +20,7 @@ func getHall(w http.ResponseWriter, r *http.Request) {
 }
 
 func getDish(w http.ResponseWriter, r *http.Request) {
-	var dish models.Dish
+	var dish structs.Dish
 	err := json.NewDecoder(r.Body).Decode(&dish)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
