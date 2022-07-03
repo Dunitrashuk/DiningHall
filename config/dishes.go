@@ -4,7 +4,7 @@ import (
 	"github.com/Dunitrashuk/DiningHall/structs"
 )
 
-var Dishes = []models.Dish{
+var Dishes = []structs.Dish{
 	{
 		1,
 		"pizza",
@@ -77,7 +77,7 @@ var Dishes = []models.Dish{
 	},
 }
 
-func GetDish(id int) models.Dish {
+func GetDish(id int) structs.Dish {
 	return Dishes[id - 1]
 }
 
