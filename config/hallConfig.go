@@ -1,9 +1,9 @@
 package config
 
-func nrOfTables() int {
+func NrOfTables() int {
 	return 10
 }
 
-func nrOfWaiters() int {
+func NrOfWaiters() int {
 	return 4
 }

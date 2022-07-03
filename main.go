@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Dunitrashuk/DiningHall/config"
-	"github.com/Dunitrashuk/DiningHall/models"
+	"github.com/Dunitrashuk/DiningHall/structs"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"time"
 )
+
+var tables []structs.Table
 
 func getHall(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Hall Server is Listening on port 8082")
@@ -31,7 +33,7 @@ func getDish(w http.ResponseWriter, r *http.Request) {
 
 func sendDishes() {
 	time.Sleep(2 * time.Second)
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 10; i++ {
 		sendDish(i)
 		time.Sleep(1 * time.Second)
 	}
@@ -57,6 +59,18 @@ func hallServer() {
 	myRouter.HandleFunc("/", getHall).Methods("GET")
 	myRouter.HandleFunc("/distribution", getDish).Methods("POST")
 	log.Fatal(http.ListenAndServe(":"+config.GetHallPort(), myRouter))
+}
+
+//function to create tables
+func createTables() {
+	for i := 0; i < config.NrOfTables(); i++ {
+		table := structs.Table{
+			i,
+			"free",
+			0,
+		}
+		tables = append(tables, table)
+	}
 }
 
 func main() {

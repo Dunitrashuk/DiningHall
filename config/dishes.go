@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/Dunitrashuk/DiningHall/models"
+	"github.com/Dunitrashuk/DiningHall/structs"
 )
 
 var Dishes = []models.Dish{
