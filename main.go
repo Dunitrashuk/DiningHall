@@ -8,10 +8,12 @@ import (
 	"github.com/Dunitrashuk/DiningHall/structs"
 	"github.com/gorilla/mux"
 	"log"
+	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 )
-
+var mutex sync.Mutex
 var tables []structs.Table
 
 func getHall(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +35,7 @@ func getDish(w http.ResponseWriter, r *http.Request) {
 
 func sendDishes() {
 	time.Sleep(2 * time.Second)
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= config.GetDishLen(); i++ {
 		sendDish(i)
 		time.Sleep(1 * time.Second)
 	}
@@ -73,8 +75,41 @@ func createTables() {
 	}
 }
 
-func main() {
-	go sendDishes()
-	hallServer()
+func occupy(table int) {
+	for {
+		// wait 2-3 min to occupy after table became free
+		if tables[table].State == "free" {
+			time.Sleep(time.Duration(rand.Intn(1000) + 2000) * time.Millisecond)
+			tables[table].State = "WO"
+			fmt.Printf("Table %d: %s\n", table, tables[table].State)
+		}
+	}
 }
+
+func occupyTables() {
+	for i := 0; i < config.NrOfTables(); i++ {
+		// wait for about 1 min to start occupation
+		time.Sleep(time.Duration(rand.Intn(300) + 800) * time.Millisecond)
+		go occupy(i)
+	}
+}
+
+func printTables() {
+	time.Sleep(time.Duration(rand.Intn(100) + 4900) * time.Millisecond)
+	fmt.Println()
+	for i := 0; i < config.NrOfTables(); i++ {
+		fmt.Printf("Table %d: %s\n", i, tables[i].State)
+	}
+}
+
+
+func main() {
+	//go sendDishes()
+	fmt.Println(config.NrOfTables())
+	createTables()
+	occupyTables()
+	printTables()
+	//hallServer()
+}
+
 
