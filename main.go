@@ -17,6 +17,7 @@ import (
 
 var mutex sync.Mutex
 var tables []structs.Table
+var orderList []structs.Order
 
 func getHall(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Hall Server is Listening on port 8082")
@@ -132,15 +133,32 @@ func generateOrder(waiterId int, tableId int) structs.Order{
 	return order
 }
 
+func createWaiters() {
+	for i := 1; i <= config.NrOfWaiters() + 1; i++ {
+		go waiter(i)
+		fmt.Printf("Waiter %d created\n", i)
+	}
+}
+
+
+func waiter(waiterId int) {
+	for {
+		mutex.Lock()
+		for i := 0; i < config.NrOfTables(); i++ {
+			if tables[i].State == "WO" {
+				orderList = append(orderList, generateOrder(waiterId, i))
+				fmt.Printf("%+v\n", orderList[len(orderList) - 1])
+				tables[i].State = "WS"
+			}
+		}
+		mutex.Unlock()
+	}
+}
+
 func main() {
 	//go sendDishes()
-	//createTables()
-	//occupyTables()
-	var orderList []structs.Order
-	for i := 0; i < 10; i++ {
-		orderList = append(orderList, generateOrder(i, i))
-		time.Sleep(time.Duration(rand.Intn(100)+500) * time.Millisecond)
-		fmt.Printf("%+v\n", orderList[i])
-	}
+	createTables()
+	occupyTables()
+	createWaiters()
 	hallServer()
 }
