@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Dunitrashuk/DiningHall/config"
 	"github.com/Dunitrashuk/DiningHall/structs"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"log"
 	"math/rand"
@@ -89,25 +90,57 @@ func occupy(table int) {
 
 func occupyTables() {
 	for i := 0; i < config.NrOfTables(); i++ {
+		fmt.Printf("Table %d: %s\n", i, tables[i].State)
 		// wait for about 1 min to start occupation
 		time.Sleep(time.Duration(rand.Intn(300)+800) * time.Millisecond)
 		go occupy(i)
 	}
 }
 
-func printTables() {
-	time.Sleep(time.Duration(rand.Intn(100)+4900) * time.Millisecond)
-	fmt.Println()
-	for i := 0; i < config.NrOfTables(); i++ {
-		fmt.Printf("Table %d: %s\n", i, tables[i].State)
+//func printTables() {
+//	time.Sleep(time.Duration(rand.Intn(100)+4900) * time.Millisecond)
+//	fmt.Println()
+//	for i := 0; i < config.NrOfTables(); i++ {
+//		fmt.Printf("Table %d: %s\n", i, tables[i].State)
+//	}
+//}
+
+func generateOrder(waiterId int, tableId int) structs.Order{
+	var items []int
+	maxWait := 0
+
+	 for i := 0; i < rand.Intn(5) + 1; i++ {
+		 items = append(items, config.GetDish(rand.Intn(9) + 1).Dish_id)
+	 }
+
+	for _, dishId := range items {
+		preparationTime := config.GetDish(dishId - 1).Preparation_time
+		if maxWait < preparationTime {
+			maxWait = preparationTime
+		}
 	}
+
+	order := structs.Order{
+		Order_Id: uuid.New().String(),
+		Table_Id: tableId,
+		Items: items,
+		Priority: rand.Intn(5) + 1,
+		Max_Wait: int(float32(maxWait) * 1.3),
+		Pickup_Time: int(time.Now().Unix()),
+		Waiter_Id: waiterId,
+	}
+	return order
 }
 
 func main() {
-	go sendDishes()
-	// fmt.Println(config.NrOfTables())
-	// createTables()
-	// occupyTables()
-	// printTables()
+	//go sendDishes()
+	//createTables()
+	//occupyTables()
+	var orderList []structs.Order
+	for i := 0; i < 10; i++ {
+		orderList = append(orderList, generateOrder(i, i))
+		time.Sleep(time.Duration(rand.Intn(100)+500) * time.Millisecond)
+		fmt.Printf("%+v\n", orderList[i])
+	}
 	hallServer()
 }

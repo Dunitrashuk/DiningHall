@@ -78,7 +78,7 @@ var Dishes = []structs.Dish{
 }
 
 func GetDish(id int) structs.Dish {
-	return Dishes[id - 1]
+	return Dishes[id]
 }
 
 func GetDishLen() int {
