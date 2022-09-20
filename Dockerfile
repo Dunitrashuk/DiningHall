@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY *.go ./
 COPY /config ./config
-COPY /models ./models
+COPY /structs ./structs
 RUN go build -o /DiningHall
 
 EXPOSE 8082
