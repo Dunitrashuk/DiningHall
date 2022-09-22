@@ -36,16 +36,8 @@ func getDish(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println("Dishes:", ordersDone)
 }
 
-func sendDishes() {
-	time.Sleep(2 * time.Second)
-	for i := 1; i <= 5; i++ {
-		sendDish(i)
-		time.Sleep(1 * time.Second)
-	}
-}
-
-func sendDish(index int) {
-	data := config.GetDish(index)
+func sendOrder(order structs.Order) {
+	data := order
 	jsonData, errMarshall := json.Marshal(data)
 	if errMarshall != nil {
 		log.Fatal(errMarshall)
@@ -56,7 +48,7 @@ func sendDish(index int) {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Dish %d sent to kitchen. Status: %d\n", data.Dish_id, resp.StatusCode)
+	fmt.Printf("Order %d sent to kitchen. Status: %d\n", data.Order_Id, resp.StatusCode)
 }
 
 func hallServer() {
@@ -70,9 +62,8 @@ func hallServer() {
 func createTables() {
 	for i := 0; i < config.NrOfTables(); i++ {
 		table := structs.Table{
-			i,
-			"free",
-			0,
+			Id:    i,
+			State: "free",
 		}
 		tables = append(tables, table)
 	}
@@ -98,13 +89,13 @@ func occupyTables() {
 	}
 }
 
-//func printTables() {
-//	time.Sleep(time.Duration(rand.Intn(100)+4900) * time.Millisecond)
-//	fmt.Println()
-//	for i := 0; i < config.NrOfTables(); i++ {
-//		fmt.Printf("Table %d: %s\n", i, tables[i].State)
-//	}
-//}
+func printTables() {
+	time.Sleep(time.Duration(rand.Intn(100)+4900) * time.Millisecond)
+	fmt.Println()
+	for i := 0; i < config.NrOfTables(); i++ {
+		fmt.Printf("%+v\n", tables[i])
+	}
+}
 
 func generateOrder(waiterId int, tableId int) structs.Order{
 	var items []int
@@ -143,11 +134,15 @@ func createWaiters() {
 
 func waiter(waiterId int) {
 	for {
-		mutex.Lock()
+		time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
+		mutex.Lock() //lock mutex in order to access the shared resource tables
 		for i := 0; i < config.NrOfTables(); i++ {
 			if tables[i].State == "WO" {
-				orderList = append(orderList, generateOrder(waiterId, i))
-				fmt.Printf("%+v\n", orderList[len(orderList) - 1])
+				order := generateOrder(waiterId, i)
+				orderList = append(orderList, order)
+				tables[i].OrderId = order.Order_Id
+				fmt.Printf("%+v\n", order)
+				sendOrder(order)
 				tables[i].State = "WS"
 			}
 		}
@@ -158,7 +153,8 @@ func waiter(waiterId int) {
 func main() {
 	//go sendDishes()
 	createTables()
-	occupyTables()
 	createWaiters()
+	occupyTables()
+	printTables()
 	hallServer()
 }
