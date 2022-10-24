@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/Dunitrashuk/DiningHall/config"
 	"github.com/Dunitrashuk/DiningHall/structs"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"log"
 	"math/rand"
@@ -18,22 +17,24 @@ import (
 var mutex sync.Mutex
 var tables []structs.Table
 var orderList []structs.Order
+var finishedOrders []structs.FinishedOrder
+var orderId = 0
 
 func getHall(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Hall Server is Listening on port 8082")
 	fmt.Fprintf(w, "Hall Server is Listening on port 8082")
 }
 
-func getDish(w http.ResponseWriter, r *http.Request) {
-	var dish structs.Dish
-	err := json.NewDecoder(r.Body).Decode(&dish)
+func getOrder(w http.ResponseWriter, r *http.Request) {
+	var order structs.FinishedOrder
+	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	finishedOrders = append(finishedOrders, order)
+	fmt.Printf("Order %d received.\n", order.Order_id)
 
-	fmt.Printf("Dish %d received. Name: %s\n", dish.Dish_id, dish.Name)
-	//fmt.Println("Dishes:", ordersDone)
 }
 
 func sendOrder(order structs.Order) {
@@ -54,7 +55,7 @@ func sendOrder(order structs.Order) {
 func hallServer() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/", getHall).Methods("GET")
-	myRouter.HandleFunc("/distribution", getDish).Methods("POST")
+	myRouter.HandleFunc("/distribution", getOrder).Methods("POST")
 	log.Fatal(http.ListenAndServe(":"+config.GetHallPort(), myRouter))
 }
 
@@ -113,19 +114,20 @@ func generateOrder(waiterId int, tableId int) structs.Order{
 	}
 
 	order := structs.Order{
-		Order_Id: uuid.New().String(),
-		Table_Id: tableId,
-		Items: items,
-		Priority: rand.Intn(5) + 1,
-		Max_Wait: int(float32(maxWait) * 1.3),
+		Order_Id:    orderId,
+		Table_Id:    tableId,
+		Items:       items,
+		Priority:    rand.Intn(5) + 1,
+		Max_Wait:    int(float32(maxWait) * 1.3),
 		Pickup_Time: int(time.Now().Unix()),
-		Waiter_Id: waiterId,
+		Waiter_Id:   waiterId,
 	}
+	orderId += 1
 	return order
 }
 
 func createWaiters() {
-	for i := 1; i <= config.NrOfWaiters() + 1; i++ {
+	for i := 1; i <= config.NrOfWaiters(); i++ {
 		go waiter(i)
 		fmt.Printf("Waiter %d created\n", i)
 	}
@@ -134,27 +136,27 @@ func createWaiters() {
 
 func waiter(waiterId int) {
 	for {
-		time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
-		mutex.Lock() //lock mutex in order to access the shared resource tables
-		for i := 0; i < config.NrOfTables(); i++ {
-			if tables[i].State == "WO" {
-				order := generateOrder(waiterId, i)
-				orderList = append(orderList, order)
-				tables[i].OrderId = order.Order_Id
-				fmt.Printf("%+v\n", order)
-				sendOrder(order)
-				tables[i].State = "WS"
-			}
-		}
+		mutex.Lock()
+		time.Sleep(time.Duration(rand.Intn(1500)+500) * time.Millisecond)
+		//mutex.Lock() //lock mutex in order to access the shared resource tables
+		//for i := 0; i < config.NrOfTables(); i++ {
+		//	if tables[i].State == "WO" {
+		//		order := generateOrder(waiterId, i)
+		//		orderList = append(orderList, order)
+		//		tables[i].OrderId = order.Order_Id
+		//		//fmt.Printf("%+v\n", order)
+		//		sendOrder(order)
+		//		tables[i].State = "WS"
+		//	}
+		//}
+		//mutex.Unlock()
+		order := generateOrder(waiterId, 1)
+		sendOrder(order)
 		mutex.Unlock()
 	}
 }
 
 func main() {
-	//go sendDishes()
-	createTables()
 	createWaiters()
-	occupyTables()
-	printTables()
 	hallServer()
 }

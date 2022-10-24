@@ -1,9 +1,9 @@
 package config
 
 func NrOfTables() int {
-	return 10
+	return 5
 }
 
 func NrOfWaiters() int {
-	return 4
+	return 3
 }
